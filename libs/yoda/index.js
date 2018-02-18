@@ -71,7 +71,7 @@ router.get('/', views.index);
 
 module.exports = router;\n`;
   const viewsData = `exports.index = (req, res) => {
-res.send('Index');
+  res.send('Index ${app}');
 };\n`;
   await writeFile(`${newAppDir}/models.js`, '');
   await writeFile(`${newAppDir}/router.js`, routerData);

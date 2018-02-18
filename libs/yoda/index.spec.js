@@ -7,7 +7,7 @@ const yoda = require('../yoda');
 const yodaConfig = require('./config');
 
 describe('libs/yoda', () => {
-  const app = 'bob';
+  const app = 'bob43535';
   describe('generateApp()', () => {
     afterEach(async () => {
       await yoda.removeApp(app, yodaConfig.appsDir, yodaConfig.configRoutesFile, yodaConfig.newFiles);
