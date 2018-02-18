@@ -52,7 +52,7 @@ async function addAppToConfigRoutes(configRoutesFile, app) {
   }
 }
 
-async function generateApp(app, appsDir, configRoutesFile, newFiles) {
+const generateApp = async (app, appsDir, configRoutesFile, newFiles) => {
   const files = await readdir(appsDir);
   for (const file of files) {
     const stats = await lstat(path.join(appsDir, file));
@@ -77,9 +77,11 @@ res.send('Index');
   await writeFile(`${newAppDir}/router.js`, routerData);
   await writeFile(`${newAppDir}/views.js`, viewsData);
   await addAppToConfigRoutes(configRoutesFile, app);
-  console.log(chalk.green(`This <app:${app}> successfully created.`));
-  info('generateApp', newAppDir, newFiles, configRoutesFile);
-}
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(chalk.green(`This <app:${app}> successfully created.`));
+    info('generateApp', newAppDir, newFiles, configRoutesFile);
+  }
+};
 
 async function removeAppFromConfigRoutes(app, configRoutesFile) {
   try {
@@ -110,7 +112,7 @@ async function removeFiles(file) {
   await rmdir(file);
 }
 
-async function removeApp(app, appsDir, configRoutesFile, newFiles) {
+const removeApp = async (app, appsDir, configRoutesFile, newFiles) => {
   // if (app === 'default') {
   //   throw new Error(`This <app:${app}> is default app.`);
   // }
@@ -121,16 +123,18 @@ async function removeApp(app, appsDir, configRoutesFile, newFiles) {
     if (stats.isDirectory() && app === file) {
       await removeFiles(removeFile);
       await removeAppFromConfigRoutes(app, configRoutesFile);
-      console.log(chalk.green(`This <app:${app}> successfully removed.`));
       const rmAppDir = path.join(appsDir, app);
-      info('removeApp', rmAppDir, newFiles, configRoutesFile);
-      process.exit();
+      if (process.env.NODE_ENV !== 'test') {
+        console.log(chalk.green(`This <app:${app}> successfully removed.`));
+        info('removeApp', rmAppDir, newFiles, configRoutesFile);
+      }
+      return;
     }
   }
   throw new Error(`This <app:${app}> not exists.`);
-}
+};
 
-exports.actionGenerateApp = (app) => {
+const actionGenerateApp = (app) => {
   (async () => {
     try {
       await generateApp(app, config.appsDir, config.configRoutesFile, config.newFiles);
@@ -141,7 +145,7 @@ exports.actionGenerateApp = (app) => {
   })();
 };
 
-exports.actionRemoveApp = (app) => {
+const actionRemoveApp = (app) => {
   (async () => {
     try {
       await removeApp(app, config.appsDir, config.configRoutesFile, config.newFiles);
@@ -152,3 +156,9 @@ exports.actionRemoveApp = (app) => {
   })();
 };
 
+module.exports = {
+  generateApp,
+  removeApp,
+  actionGenerateApp,
+  actionRemoveApp,
+};
