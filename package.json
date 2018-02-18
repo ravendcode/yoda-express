@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "export DEBUG=app:* || set DEBUG=app:* && nodemon index.js -e js,hbs",
-    "test": "export NODE_ENV=test || set NODE_ENV=test&& mocha \"./{,!(node_modules)/**/}*.spec.js\"",
+    "test": "export NODE_ENV=test || set NODE_ENV=test&& mocha \"./{,!(node_modules|client)/**/}*.spec.js\"",
     "prod": "export NODE_ENV=production || set NODE_ENV=production&& node index.js"
   },
   "keywords": [],
