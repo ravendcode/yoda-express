@@ -2,7 +2,6 @@
 const fs = require('fs');
 const path = require('path');
 const { assert } = require('chai');
-// const { promisify } = require('util');
 const yoda = require('../yoda');
 const yodaConfig = require('./config');
 

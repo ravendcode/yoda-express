@@ -73,6 +73,9 @@ module.exports = router;\n`;
   const viewsData = `exports.index = (req, res) => {
   res.send('Index ${app}');
 };\n`;
+  const specFile = `${app}.spec.js`;
+  newFiles.push(specFile);
+  await writeFile(`${newAppDir}/${specFile}`, '');
   await writeFile(`${newAppDir}/models.js`, '');
   await writeFile(`${newAppDir}/router.js`, routerData);
   await writeFile(`${newAppDir}/views.js`, viewsData);
