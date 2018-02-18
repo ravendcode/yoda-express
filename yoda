@@ -1,0 +1,34 @@
+#!/usr/bin/env node
+/* eslint-disable no-console */
+const program = require('commander');
+const { exec } = require('child_process');
+const yoda = require('./libs/yoda');
+
+if (process.argv.length === 2) {
+  exec('node yoda -h', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return;
+    }
+    if (stderr) {
+      console.log(`stderr: ${stderr}`);
+      return;
+    }
+    console.log(stdout);
+  });
+}
+
+program
+  .version('0.0.1')
+  .command('generate <app>')
+  .alias('g')
+  .description('generate new app')
+  .action(yoda.actionGenerateApp);
+
+program
+  .command('remove <app>')
+  .alias('r')
+  .description('remove app')
+  .action(yoda.actionRemoveApp);
+
+program.parse(process.argv);
