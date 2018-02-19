@@ -3,26 +3,26 @@ const fs = require('fs');
 const path = require('path');
 const { assert } = require('chai');
 const yoda = require('../yoda');
-const yodaConfig = require('./config');
+const yconfig = require('./config');
 
 describe('libs/yoda', () => {
-  const app = 'bob43535';
-  describe('generateApp()', () => {
+  const resource = 'bob43535';
+  describe('generateResource()', () => {
     afterEach(async () => {
-      await yoda.removeApp(app, yodaConfig.appsDir, yodaConfig.configRoutesFile, yodaConfig.newFiles);
+      await yoda.removeResource(resource, yconfig.resourcesDir, yconfig.apiIndexFile);
     });
-    it('should create dir with specific app name', async () => {
-      await yoda.generateApp(app, yodaConfig.appsDir, yodaConfig.configRoutesFile, yodaConfig.newFiles);
-      assert.isOk(fs.existsSync(path.resolve(yodaConfig.appsDir, app)));
+    it('should create dir with specific resource name', async () => {
+      await yoda.generateResource(resource, yconfig.resourcesDir, yconfig.apiIndexFile);
+      assert.isOk(fs.existsSync(path.resolve(yconfig.resourcesDir, resource)));
     });
   });
-  describe('removeApp()', () => {
+  describe('removeResource()', () => {
     beforeEach(async () => {
-      await yoda.generateApp(app, yodaConfig.appsDir, yodaConfig.configRoutesFile, yodaConfig.newFiles);
+      await yoda.generateResource(resource, yconfig.resourcesDir, yconfig.apiIndexFile);
     });
-    it('should remove dir with specific app name', async () => {
-      await yoda.removeApp(app, yodaConfig.appsDir, yodaConfig.configRoutesFile, yodaConfig.newFiles);
-      assert.isNotOk(fs.existsSync(path.resolve(yodaConfig.appsDir, app)));
+    it('should remove dir with specific resource name', async () => {
+      await yoda.removeResource(resource, yconfig.resourcesDir, yconfig.apiIndexFile);
+      assert.isNotOk(fs.existsSync(path.resolve(yconfig.resourcesDir, resource)));
     });
   });
 });

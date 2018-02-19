@@ -20,15 +20,15 @@ if (process.argv.length === 2) {
 
 program
   .version('0.0.1')
-  .command('generate <app>')
+  .command('generate <resource>')
   .alias('g')
-  .description('generate new app')
-  .action(yoda.actionGenerateApp);
+  .description('generate new resource')
+  .action(yoda.actionGenerateResource);
 
 program
-  .command('remove <app>')
+  .command('remove <resource>')
   .alias('r')
-  .description('remove app')
-  .action(yoda.actionRemoveApp);
+  .description('remove resource')
+  .action(yoda.actionRemoveResource);
 
 program.parse(process.argv);

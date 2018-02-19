@@ -13,37 +13,37 @@ const readFile = promisify(fs.readFile);
 
 const config = require('./config');
 
-function info(state, appDir, newFiles, configRoutesFile) {
+function info(state, resourceDir, newFiles, apiIndexFile) {
   switch (state) {
-    case 'generateApp':
+    case 'generateResource':
       console.log('\tAdded:');
       for (const file of newFiles) {
-        console.log('\t\t' + path.join(appDir, file));
+        console.log('\t\t' + path.join(resourceDir, file));
       }
       console.log('\tModified:');
-      console.log(`\t\t${configRoutesFile}`);
+      console.log(`\t\t${apiIndexFile}`);
       break;
-    case 'removeApp':
+    case 'removeResource':
       console.log('\tRemoved:');
-      console.log(`\t\t${appDir}`);
+      console.log(`\t\t${resourceDir}`);
       console.log('\tModified:');
-      console.log(`\t\t${configRoutesFile}`);
+      console.log(`\t\t${apiIndexFile}`);
       break;
     default:
       break;
   }
 }
 
-async function addAppToConfigRoutes(configRoutesFile, app) {
+async function addResourceToAPI(apiIndexFile, resource) {
   try {
-    const data = await readFile(configRoutesFile, 'utf-8');
-    const routerText = `  app.use('/${app}', require('../app/${app}/router'));`;
+    const data = await readFile(apiIndexFile, 'utf-8');
+    const routerText = `router.use('/${resource}', require('./resources/${resource}'));`;
     const lines = data.split('\n');
     const linesLen = lines.length;
     for (let i = 0; i < linesLen; i++) {
-      if (new RegExp('\}\;').test(lines[i])) {
-        lines.splice(i, 0, routerText);
-        await writeFile(configRoutesFile, lines.join('\n'));
+      if (new RegExp('module.exports = router;').test(lines[i])) {
+        lines.splice(--i, 0, routerText);
+        await writeFile(apiIndexFile, lines.join('\n'));
         return;
       }
     }
@@ -52,51 +52,92 @@ async function addAppToConfigRoutes(configRoutesFile, app) {
   }
 }
 
-const generateApp = async (app, appsDir, configRoutesFile, newFiles) => {
-  const files = await readdir(appsDir);
+const generateResource = async (resource, resourcesDir, apiIndexFile) => {
+  const files = await readdir(resourcesDir);
   for (const file of files) {
-    const stats = await lstat(path.join(appsDir, file));
-    if (stats.isDirectory() && app === file) {
-      throw new Error(`This <app:${app}> already exists.`);
+    const stats = await lstat(path.join(resourcesDir, file));
+    if (stats.isDirectory() && resource === file) {
+      throw new Error(`This <resource:${resource}> already exists.`);
     }
   }
-  const newAppDir = path.join(appsDir, app);
-  fs.mkdirSync(newAppDir);
+  const newResourceDir = path.join(resourcesDir, resource);
+  fs.mkdirSync(newResourceDir);
+  const indexData = `module.exports = require('./${resource}.router');\n`;
   const routerData = `const express = require('express');
-const views = require('./views');
+const handler = require('./user.handler');
 
 const router = express.Router();
 
-router.get('/', views.index);
+router.param('id', handler.findByParam);
+
+router.route('/')
+  .get(handler.getAll)
+  .post(handler.createOne);
+
+router.route('/:id')
+  .get(handler.getOne)
+  .put(handler.updateOne)
+  .delete(handler.deleteOne);
 
 module.exports = router;\n`;
-  const viewsData = `exports.index = (req, res) => {
-  res.send('Index ${app}');
+  const handlerData = `module.exports = {
+  findByParam(req, res, next, id) {
+    if (!id) {
+      return next(new Error('Not Found Error'));
+    }
+    req.id = id;
+    return next();
+  },
+  getAll(req, res) {
+    res.send({ data: 'getAll' });
+  },
+  createOne(req, res) {
+    res.send({ data: 'createOne', body: req.body });
+  },
+  getOne(req, res) {
+    res.send({ data: 'getOne', param: req.id });
+  },
+  updateOne(req, res) {
+    res.send({ data: 'updateOne', param: req.id, body: req.body });
+  },
+  deleteOne(req, res) {
+    res.send({ data: 'deleteOne', param: req.id });
+  },
 };\n`;
-  const specFile = `${app}.spec.js`;
+  const indexFile = 'index.js';
+  const specFile = `${resource}.spec.js`;
+  const modelFile = `${resource}.model.js`;
+  const handlerFile = `${resource}.handler.js`;
+  const routerFile = `${resource}.router.js`;
+  const newFiles = [];
+  newFiles.push(indexFile);
   newFiles.push(specFile);
-  await writeFile(`${newAppDir}/${specFile}`, '');
-  await writeFile(`${newAppDir}/models.js`, '');
-  await writeFile(`${newAppDir}/router.js`, routerData);
-  await writeFile(`${newAppDir}/views.js`, viewsData);
-  await addAppToConfigRoutes(configRoutesFile, app);
+  newFiles.push(modelFile);
+  newFiles.push(handlerFile);
+  newFiles.push(routerFile);
+  await writeFile(`${newResourceDir}/${indexFile}`, indexData);
+  await writeFile(`${newResourceDir}/${specFile}`, '');
+  await writeFile(`${newResourceDir}/${modelFile}`, '');
+  await writeFile(`${newResourceDir}/${handlerFile}`, handlerData);
+  await writeFile(`${newResourceDir}/${routerFile}`, routerData);
+  await addResourceToAPI(apiIndexFile, resource);
   if (process.env.NODE_ENV !== 'test') {
-    console.log(chalk.green(`This <app:${app}> successfully created.`));
-    info('generateApp', newAppDir, newFiles, configRoutesFile);
+    console.log(chalk.green(`This <resource:${resource}> successfully created.`));
+    info('generateResource', newResourceDir, newFiles, apiIndexFile);
   }
 };
 
-async function removeAppFromConfigRoutes(app, configRoutesFile) {
+async function removeResourceFromAPI(resource, apiIndexFile) {
   try {
-    const data = await readFile(configRoutesFile, 'utf-8');
+    const data = await readFile(apiIndexFile, 'utf-8');
     const lines = data.split('\n');
     const linesLen = lines.length;
     for (let i = 0; i < linesLen; i += 1) {
-      if (new RegExp('require\\(\'../app/' + app + '/router\'\\)').test(lines[i])) {
+      if (new RegExp('require\\(\'\.\/resources\/' + resource + '\'\\)').test(lines[i])) {
         lines.splice(i, 1);
       }
     }
-    await writeFile(configRoutesFile, lines.join('\n'));
+    await writeFile(apiIndexFile, lines.join('\n'));
   } catch (e) {
     console.error(e);
   }
@@ -115,32 +156,29 @@ async function removeFiles(file) {
   await rmdir(file);
 }
 
-const removeApp = async (app, appsDir, configRoutesFile, newFiles) => {
-  // if (app === 'default') {
-  //   throw new Error(`This <app:${app}> is default app.`);
-  // }
-  const files = await readdir(appsDir);
+const removeResource = async (resource, resourcesDir, apiIndexFile) => {
+  const files = await readdir(resourcesDir);
   for (const file of files) {
-    const removeFile = path.join(appsDir, file);
+    const removeFile = path.join(resourcesDir, file);
     const stats = await lstat(removeFile);
-    if (stats.isDirectory() && app === file) {
+    if (stats.isDirectory() && resource === file) {
       await removeFiles(removeFile);
-      await removeAppFromConfigRoutes(app, configRoutesFile);
-      const rmAppDir = path.join(appsDir, app);
+      await removeResourceFromAPI(resource, apiIndexFile);
+      const rmResourceDir = path.join(resourcesDir, resource);
       if (process.env.NODE_ENV !== 'test') {
-        console.log(chalk.green(`This <app:${app}> successfully removed.`));
-        info('removeApp', rmAppDir, newFiles, configRoutesFile);
+        console.log(chalk.green(`This <resource:${resource}> successfully removed.`));
+        info('removeResource', rmResourceDir, [], apiIndexFile);
       }
       return;
     }
   }
-  throw new Error(`This <app:${app}> not exists.`);
+  throw new Error(`This <resource:${resource}> not exists.`);
 };
 
-const actionGenerateApp = (app) => {
+const actionGenerateResource = (resource) => {
   (async () => {
     try {
-      await generateApp(app, config.appsDir, config.configRoutesFile, config.newFiles);
+      await generateResource(resource, config.resourcesDir, config.apiIndexFile);
       process.exit();
     } catch (e) {
       console.error(chalk.red(e.message));
@@ -148,10 +186,10 @@ const actionGenerateApp = (app) => {
   })();
 };
 
-const actionRemoveApp = (app) => {
+const actionRemoveResource = (resource) => {
   (async () => {
     try {
-      await removeApp(app, config.appsDir, config.configRoutesFile, config.newFiles);
+      await removeResource(resource, config.resourcesDir, config.apiIndexFile);
       process.exit();
     } catch (e) {
       console.error(chalk.red(e.message));
@@ -160,8 +198,8 @@ const actionRemoveApp = (app) => {
 };
 
 module.exports = {
-  generateApp,
-  removeApp,
-  actionGenerateApp,
-  actionRemoveApp,
+  generateResource,
+  removeResource,
+  actionGenerateResource,
+  actionRemoveResource,
 };

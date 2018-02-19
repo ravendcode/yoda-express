@@ -1,18 +1,11 @@
 const path = require('path');
 
 const rootDir = path.join(__dirname, '../../');
-const appsDir = path.join(rootDir, 'app');
-const configRoutesFile = path.join(rootDir, 'config/routes.js');
-
-const newFiles = [
-  'models.js',
-  'router.js',
-  'views.js',
-];
+const resourcesDir = path.join(rootDir, './api/resources');
+const apiIndexFile = path.join(rootDir, './api/index.js');
 
 module.exports = {
   rootDir,
-  appsDir,
-  configRoutesFile,
-  newFiles,
+  resourcesDir,
+  apiIndexFile,
 };
