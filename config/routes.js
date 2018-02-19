@@ -1,4 +1,4 @@
 module.exports = (app) => {
-  app.use('/', require('../app/default'));
+  app.use('/', require('../pages'));
   app.use('/api', require('../api'));
 };
