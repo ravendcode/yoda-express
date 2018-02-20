@@ -36,5 +36,6 @@ module.exports = {
     'no-await-in-loop': 0,
     'no-useless-escape': 0,
     'max-len': 0,
+    'no-unused-expressions': 0,
   },
 };

@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "author": "ravendcode <ravendcode@gmail.com>",
   "scripts": {
     "start": "node index.js",
     "dev": "export DEBUG=app:* || set DEBUG=app:* && nodemon index.js -e js,hbs",
